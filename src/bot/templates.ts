@@ -1,6 +1,6 @@
-import { Transaction } from "@/models/Transaction";
+import { MonobankTransaction } from "@/models/Transaction";
 
-export const createExpenseMessageTemplate = (data: Transaction) => `
+export const createExpenseMessageTemplate = (data: MonobankTransaction) => `
 <b>${data.description}</b>
 <i>${new Date(data.time * 1000).toLocaleDateString()}</i>
 Сумма: ${(data.amount / 100).toFixed(2)}
