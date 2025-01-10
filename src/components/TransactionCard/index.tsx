@@ -51,6 +51,7 @@ enum ACTION_TYPES {
   REMOVE_EXTRA_EXPENSES,
   CLEAR_EXTRA_EXPENSES,
   UPDATE_EXTRA_EXPENSE,
+  RESET_STATE,
 }
 
 type ReducerState = { mainCategory?: string, extraExpenses: Partial<Expense>[] }
@@ -59,6 +60,7 @@ type Action = { type: ACTION_TYPES.ADD_EXTRA_EXPENSES, payload: string }
   | { type: ACTION_TYPES.CLEAR_EXTRA_EXPENSES }
   | { type: ACTION_TYPES.UPDATE_EXTRA_EXPENSE, payload: Partial<Expense> }
   | { type: ACTION_TYPES.REMOVE_EXTRA_EXPENSES, payload: string }
+  | { type: ACTION_TYPES.RESET_STATE, payload: ReducerState }
 
 const reducer = (state: ReducerState, action: Action) => {
   if (action.type === ACTION_TYPES.CHANGE_MAIN_CATEGORY) {
@@ -97,6 +99,10 @@ const reducer = (state: ReducerState, action: Action) => {
     }
   }
 
+  if (action.type === ACTION_TYPES.RESET_STATE) {
+    return action.payload
+  }
+
   return state
 }
 
@@ -113,38 +119,33 @@ const getInitialState = (transaction: Transaction): ReducerState => {
 }
 
 export const TransactionCard = ({ transaction, forceExpanded }: { transaction: Transaction, forceExpanded?: boolean }) => {
-  const initialState = useMemo(() => getInitialState(transaction), [transaction])
+  const [transactionData, setTransactionData] = useState(transaction);
+  const initialState = useMemo(() => getInitialState(transactionData), [transactionData])
   const [isPending, startTransition] = useTransition();
-  const [active, setActive] = useState(forceExpanded);
-  const [state, dispatch] = useReducer(reducer, initialState)
-  const [showExtra, setShowExtra] = useState(Boolean(initialState.extraExpenses.length))
+  const [isCardExpanded, setCardExpanded] = useState(forceExpanded);
+  const [expenseState, dispatch] = useReducer(reducer, initialState)
 
   const mainExpenseAmount = useMemo(() => {
     return Math.max(
-      Math.abs(transaction.amount) - state.extraExpenses
+      Math.abs(transactionData.amount) - expenseState.extraExpenses
         .reduce(
           (acc, expense) => acc += expense.amount ?? 0,
           0
         ),
       0)
-  }, [state.extraExpenses, transaction.amount])
+  }, [expenseState.extraExpenses, transactionData.amount])
 
   const handleMainExpenseChange = (category: string) => {
     dispatch({ type: ACTION_TYPES.CHANGE_MAIN_CATEGORY, payload: category || undefined })
-
   }
 
-  const handleToggleExtra = () => {
-    if (showExtra) {
-      setShowExtra(false)
-      dispatch({ type: ACTION_TYPES.CLEAR_EXTRA_EXPENSES })
-    } else {
-      setShowExtra(true)
-    }
+  const toggleCardExpanded = () => {
+    dispatch({ type: ACTION_TYPES.RESET_STATE, payload: initialState })
+    setCardExpanded((prev) => !prev)
   }
 
   const handleCategoryClick = (category: string) => () => {
-    if (state.extraExpenses.find(expense => expense.category === category)) {
+    if (expenseState.extraExpenses.find(expense => expense.category === category)) {
       dispatch({ type: ACTION_TYPES.REMOVE_EXTRA_EXPENSES, payload: category })
     } else {
       dispatch({ type: ACTION_TYPES.ADD_EXTRA_EXPENSES, payload: category })
@@ -152,44 +153,42 @@ export const TransactionCard = ({ transaction, forceExpanded }: { transaction: T
   }
 
   const handleInputChange = (category: string) => (e: ChangeEvent<HTMLInputElement>) => {
-    const currentExpenseIndex = state.extraExpenses.findIndex((expense) => expense.category === category)
-    
+    const currentExpenseIndex = expenseState.extraExpenses.findIndex((expense) => expense.category === category)
+
     if (currentExpenseIndex !== -1) {
       const truncated = Math.floor(parseFloat(e.target.value) * 100) / 100;
       dispatch({
         type: ACTION_TYPES.UPDATE_EXTRA_EXPENSE,
         payload: {
-          category, amount: e.target.value ? truncated * 100  : undefined
+          category, amount: e.target.value ? truncated * 100 : undefined
         }
       })
     }
   }
 
   const createFormData = () => ({
-    transaction_id: transaction.id,
-    user_id: transaction.user_id,
-    time: transaction.time,
-    expenses: state.mainCategory ?
-      [{ category: state.mainCategory, amount: mainExpenseAmount }, ...state.extraExpenses]
+    transaction_id: transactionData.id,
+    user_id: transactionData.user_id,
+    time: transactionData.time,
+    expenses: expenseState.mainCategory ?
+      [{ category: expenseState.mainCategory, amount: mainExpenseAmount }, ...expenseState.extraExpenses]
         .filter((category) => category.amount && category.amount > 0)
       : []
   })
 
-  const onSubmit = () => {
+  const onSubmit = (e: React.MouseEvent) => {
+    e.stopPropagation()
     const data = createFormData()
-    const validatedData = validateFormData(data, Math.abs(transaction.amount))
+    const validatedData = validateFormData(data, Math.abs(transactionData.amount))
     if (validatedData.success) {
       startTransition(() => {
         action(validatedData.data).then((res) => {
-          console.log(res);
-
           if (res.success) {
-            setShowExtra(false)
-            setActive(false)
+            setCardExpanded(false)
+            setTransactionData(res.data)
           } else {
-
+            console.log(res.error)
           }
-
         });
       });
     } else {
@@ -197,35 +196,33 @@ export const TransactionCard = ({ transaction, forceExpanded }: { transaction: T
     }
   }
 
-  const validationResult = validateFormData(createFormData(), Math.abs(transaction.amount))
-  console.log(mainExpenseAmount);
+  const validationResult = validateFormData(createFormData(), Math.abs(transactionData.amount))
 
   return (
     <div
-      onClick={() => setActive(prev => !prev)}
+      onClick={toggleCardExpanded}
       className={classNames("border-2 border-purple-500 bg-white p-3 rounded-md w-[350px]")}
     >
       <header className="flex justify-between pb-2 mb-2 border-b border-black">
-        <h3 className="font-bold">{transaction.description}</h3>
-        <span>{new Date(transaction.time).toLocaleDateString()}</span>
+        <h3 className="font-bold">{transactionData.description}</h3>
+        <span>{new Date(transactionData.time).toLocaleDateString()}</span>
       </header>
-      <p>Сумма: <span className="italic font-bold">{(transaction.amount / 100).toFixed(2)}</span></p>
-      {transaction.comment && <p>Коммент: {transaction.comment}</p>}
-      {state.mainCategory && <div className={classNames("mt-4 flex gap-2", { 'hidden': active })}>
-        <div className="rounded-md text-white bg-purple-500 p-2">{state.mainCategory}: {(mainExpenseAmount / 100).toFixed(2)} грн</div>
-        {state.extraExpenses.map(({ amount, category }) => (
+      <p>Сумма: <span className="italic font-bold">{(transactionData.amount / 100).toFixed(2)} грн.</span></p>
+      {transactionData.comment && <p>Коммент: {transactionData.comment}</p>}
+      {expenseState.mainCategory && <div className={classNames("mt-4 grid grid-cols-2 gap-2", { 'hidden': isCardExpanded })}>
+        {transactionData.expenses.map(({ amount, category }) => (
           <div className="rounded-md text-white bg-purple-500 p-2" key={category}>
             {category}: {((amount ?? 0) / 100).toFixed(2)}
           </div>
         ))}
       </div>
       }
-      <div className={classNames({ 'hidden': !active })}>
+      <div className={classNames({ 'hidden': !isCardExpanded })}>
 
         <div className="mt-4" onClick={e => e.stopPropagation()}>
           <select
             className="border w-full p-2 mb-4"
-            value={state.mainCategory}
+            value={expenseState.mainCategory}
             onChange={(e) => handleMainExpenseChange(e.target.value)}
           >
             <option value="">Выберите категорию</option>
@@ -233,18 +230,12 @@ export const TransactionCard = ({ transaction, forceExpanded }: { transaction: T
               <option value={category} key={category}>{category}</option>
             ))}
           </select>
-          {!initialState.extraExpenses.length && <button
-            disabled={!state.mainCategory}
-            onClick={handleToggleExtra}
-            className="text-sm text-purple-500 disabled:hidden mb-4"
-          >{showExtra ? 'Убрать' : 'Добавить'} доп. категории
-          </button>}
         </div>
-        <div onClick={e => e.stopPropagation()} className={classNames('mt-4', { 'hidden': !showExtra })}>
+        <div onClick={e => e.stopPropagation()} className={classNames('mt-4', { 'hidden': !isCardExpanded })}>
           <p className="font-bold mb-2">Дополнительные категории:</p>
           <div onClick={e => e.stopPropagation()} className="grid grid-cols-2 gap-2 mb-4">
-            {categories.filter((category) => category !== state.mainCategory).map((category) => {
-              const currentExpense = state.extraExpenses.find(expense => expense.category === category)
+            {categories.filter((category) => category !== expenseState.mainCategory).map((category) => {
+              const currentExpense = expenseState.extraExpenses.find(expense => expense.category === category)
               return (
                 <div key={category}>
                   <button
@@ -275,7 +266,7 @@ export const TransactionCard = ({ transaction, forceExpanded }: { transaction: T
         </button>
         {
           !validationResult?.success &&
-          state.mainCategory &&
+          expenseState.mainCategory &&
           <p className="text-red-600">{validationResult.error.issues[0].message}</p>
         }
       </div>

@@ -6,8 +6,8 @@ import Chart from "react-google-charts"
 export const MonthAnalyticChart = ({ data }: { data: CategoryAnalytic[] }) => {
   const totalAmount = data.reduce((acc, { total_amount }) => acc += total_amount, 0)
   const chartData = [
-    ['Категория', 'Сумма'],
-    ...data.map(({ category, total_amount }) => [category, total_amount / 100])
+    ['Категория', 'Сумма', { type: 'string', role: 'tooltip' }],
+    ...data.map(({ category, total_amount }) => [category, total_amount / 100, `${(total_amount / 100).toFixed(2)} грн.`])
   ]
   return (
     <div>

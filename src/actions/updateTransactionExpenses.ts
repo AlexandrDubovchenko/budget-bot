@@ -2,6 +2,8 @@
 import z, { ZodError } from 'zod';
 import { Expense } from "@/models/Expense";
 import { expenseRepository } from "@/repositories/expense-repository";
+import { transactionRepository } from '@/repositories/transaction-repository';
+import { Transaction } from '@/models/Transaction';
 
 const schema = z.object({
   transaction_id: z.number(),
@@ -20,17 +22,18 @@ export type FormData = {
   expenses: Expense[]
 };
 
-export async function action(data: FormData) {
+export async function action(data: FormData): Promise<{ success: true, data: Transaction } | { success: false, error: string }> {
   try {
     const validatedData = schema.parse(data)
     const deleteResult = await expenseRepository.removeAllExpenseForTransaction(validatedData.transaction_id)
     if (deleteResult) await expenseRepository.createMultipleExpense(validatedData)
-    return { success: true }
+    const newTransactionData = await transactionRepository.getTransactionById(data.transaction_id)
+    return { success: true, data: newTransactionData }
   } catch (error: unknown) {
     console.log(error);
 
     if (error instanceof ZodError) {
-      return { success: false, error: error.flatten }
+      return { success: false, error: error.issues[0]?.message }
     } else {
       return { success: false, error: 'Something went wrong' }
     }
