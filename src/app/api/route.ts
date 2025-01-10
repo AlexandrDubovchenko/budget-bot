@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
   const token = signJwt({ id: user.id })
   if (user) {
     const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
-    bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), Markup.inlineKeyboard([Markup.button.webApp("Launch", `${appUrl}/transaction/${result.id}?token=${token}`)]));
+    bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), {
+      parse_mode: 'HTML',
+      ...Markup.inlineKeyboard([Markup.button.webApp("Отметить категории", `${appUrl}/transaction/${result.id}?token=${token}`)])
+    });
   }
   // Do whatever you want
   return NextResponse.json({ success: true }, { status: 200 });
