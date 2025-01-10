@@ -113,10 +113,11 @@ const getInitialState = (transaction: Transaction): ReducerState => {
 }
 
 export const TransactionCard = ({ transaction, forceExpanded }: { transaction: Transaction, forceExpanded?: boolean }) => {
+  const initialState = useMemo(() => getInitialState(transaction), [transaction])
   const [isPending, startTransition] = useTransition();
   const [active, setActive] = useState(forceExpanded);
-  const [state, dispatch] = useReducer(reducer, getInitialState(transaction))
-  const [showExtra, setShowExtra] = useState(Boolean(transaction.expenses.length))
+  const [state, dispatch] = useReducer(reducer, initialState)
+  const [showExtra, setShowExtra] = useState(Boolean(initialState.extraExpenses.length))
 
   const mainExpenseAmount = useMemo(() => {
     return Math.max(
@@ -232,14 +233,14 @@ export const TransactionCard = ({ transaction, forceExpanded }: { transaction: T
               <option value={category} key={category}>{category}</option>
             ))}
           </select>
-          {!transaction.expenses.length && <button
+          {!initialState.extraExpenses.length && <button
             disabled={!state.mainCategory}
             onClick={handleToggleExtra}
             className="text-sm text-purple-500 disabled:hidden mb-4"
           >{showExtra ? 'Убрать' : 'Добавить'} доп. категории
           </button>}
         </div>
-        <div className={classNames('mt-4', { 'hidden': !showExtra })}>
+        <div onClick={e => e.stopPropagation()} className={classNames('mt-4', { 'hidden': !showExtra })}>
           <p className="font-bold mb-2">Дополнительные категории:</p>
           <div onClick={e => e.stopPropagation()} className="grid grid-cols-2 gap-2 mb-4">
             {categories.filter((category) => category !== state.mainCategory).map((category) => {
