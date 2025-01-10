@@ -38,7 +38,7 @@ async function createUser(apiKey: string, chatId: number, accounts: string[]) {
 
 async function getUserByAccountId(accountId: string): Promise<User> {
   const { rows } = await dbpool.sql<User>`SELECT u.*
-      FROM users u
+  FROM users u
   JOIN accounts acc ON u.id = acc.user_id
   WHERE acc.account_id = ${accountId} `;
   return rows[0]

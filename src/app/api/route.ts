@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true }, { status: 200 })
   }
   const user = await userRepository.getUserByAccountId(body.data.account)
+  console.log(`New transaction for user ${user.id} data: ${JSON.stringify(body)}`)
   if (user) {
     const token = signJwt({ id: user.id })
     const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
