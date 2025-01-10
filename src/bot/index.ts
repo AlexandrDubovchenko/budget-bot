@@ -40,12 +40,10 @@ bot.on(message("text"), async ctx => {
       await ctx.sendMessage('Регистрация завершена успешно');
       await chatRepository.updateStatus(chat.id, 'WAIT_COMMAND')
       const token = await signJwt({ id: user.id })
-      await ctx.telegram.setChatMenuButton({
-        menuButton: {
-          text: "Открыть приложение",
-          type: 'web_app',
-          web_app: { url: `${process.env.APP_URL}?token=${token}` },
-        }
+      await ctx.setChatMenuButton({
+        text: "Открыть приложение",
+        type: 'web_app',
+        web_app: { url: `${process.env.APP_URL}?token=${token}` },
       })
     } catch (error) {
       console.log(error);
