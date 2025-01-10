@@ -2,6 +2,7 @@ import { bot } from "@/bot";
 import { createExpenseMessageTemplate } from "@/bot/templates";
 import { transactionRepository } from "@/repositories/transaction-repository";
 import { userRepository } from "@/repositories/user-repository";
+import { monobankService } from "@/services/monobank-service";
 import { signJwt } from "@/utils/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { Markup } from "telegraf";
@@ -11,9 +12,13 @@ const appUrl = process.env.APP_URL
 // To handle a POST request to /api
 export async function POST(request: NextRequest) {
   const body = await request.json();
+  const isExtrernalTransaction = !monobankService.checkIfFromMyFop(body.data.statementItem)
+  if (!isExtrernalTransaction) {
+    return NextResponse.json({ success: true }, { status: 200 })
+  }
   const user = await userRepository.getUserByAccountId(body.data.account)
-  const token = signJwt({ id: user.id })
   if (user) {
+    const token = signJwt({ id: user.id })
     const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
     bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), {
       parse_mode: 'HTML',
