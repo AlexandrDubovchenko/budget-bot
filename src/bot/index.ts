@@ -44,7 +44,7 @@ bot.on(message("text"), async ctx => {
         menuButton: {
           text: "Открыть приложение",
           type: 'web_app',
-          web_app: { url: `process.env.APP_URL?token=${token}` },
+          web_app: { url: `${process.env.APP_URL}?token=${token}` },
         }
       })
     } catch (error) {
