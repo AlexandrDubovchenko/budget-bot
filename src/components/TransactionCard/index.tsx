@@ -20,7 +20,9 @@ export const categories = [
   "Табак",
   "Ресторан",
   "Кофе",
-  "Другое"
+  "Спорт",
+  "Здоровье",
+  "Другое",
 ]
 
 const validateFormData = (data: unknown, maxAmount: number) => {
