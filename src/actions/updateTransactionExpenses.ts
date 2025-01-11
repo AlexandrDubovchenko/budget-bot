@@ -11,7 +11,7 @@ const schema = z.object({
   time: z.date(),
   expenses: z.array(z.object({
     category: z.string().min(1),
-    amount: z.number().gt(0)
+    amount: z.number()
   })).nonempty()
 })
 

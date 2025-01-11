@@ -32,7 +32,7 @@ const validateFormData = (data: unknown, maxAmount: number) => {
     time: z.date(),
     expenses: z.array(z.object({
       category: z.string().min(1),
-      amount: z.number().gt(0)
+      amount: z.number()
     })).nonempty()
       .refine(
         (expenses) => expenses.reduce((sum, expense) => sum + expense.amount, 0) <= maxAmount,
@@ -166,15 +166,27 @@ export const TransactionCard = ({ transaction, forceExpanded }: { transaction: T
     }
   }
 
-  const createFormData = () => ({
-    transaction_id: transactionData.id,
-    user_id: transactionData.user_id,
-    time: transactionData.time,
-    expenses: expenseState.mainCategory ?
-      [{ category: expenseState.mainCategory, amount: mainExpenseAmount }, ...expenseState.extraExpenses]
-        .filter((category) => category.amount && category.amount > 0)
-      : []
-  })
+  const createFormData = () => {
+    const isExpense = transactionData.amount < 0;
+    const multiplier = isExpense ? -1 : 1
+    return {
+      transaction_id: transactionData.id,
+      user_id: transactionData.user_id,
+      time: transactionData.time,
+      expenses: expenseState.mainCategory ?
+        [{
+          category: expenseState.mainCategory,
+          amount: mainExpenseAmount * multiplier
+        },
+        ...expenseState.extraExpenses
+          .filter((expense) => expense.amount && expense.amount > 0)
+          .map((expense) => ({
+            ...expense,
+            amount: (expense.amount ?? 0) * multiplier
+          }))]
+        : []
+    }
+  }
 
   const onSubmit = (e: React.MouseEvent) => {
     e.stopPropagation()
