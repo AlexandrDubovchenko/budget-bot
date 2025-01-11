@@ -19,13 +19,16 @@ export async function POST(request: NextRequest) {
   const user = await userRepository.getUserByAccountId(body.data.account)
   console.log(`New transaction for user ${user.id} data: ${JSON.stringify(body)}`)
   if (user) {
-    const token = signJwt({ id: user.id })
-    const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
-    bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), {
-      parse_mode: 'HTML',
-      ...Markup.inlineKeyboard([Markup.button.webApp("Отметить категории", `${appUrl}/transaction/${result.id}?token=${token}`)])
-    });
+    try {
+      const token = await signJwt({ id: user.id })
+      const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
+      await bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([Markup.button.webApp("Отметить категории", `${appUrl}/transaction/${result.id}?token=${token}`)])
+      });
+    } catch (error) {
+      console.log(`ERROR while processing new transaction: ${error}`)
+    }
   }
-  // Do whatever you want
   return NextResponse.json({ success: true }, { status: 200 });
 }
