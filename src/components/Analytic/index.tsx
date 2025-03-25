@@ -57,7 +57,7 @@ export const Analytic = ({
     const { analytic } = await refetchAnalytic(selectedDateRange);
     setAnalytic(analytic);
   };
-
+  
   return (
     <div className='flex flex-col gap-4'>
       <DatePicker value={selectedDateRange} onChange={handleDateChange} />

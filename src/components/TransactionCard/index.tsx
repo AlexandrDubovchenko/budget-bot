@@ -224,7 +224,7 @@ export const TransactionCard = ({
     return {
       transaction_id: transactionData.id,
       user_id: transactionData.user_id,
-      time: transactionData.time,
+      time: new Date(transactionData.time),
       expenses: expenseState.mainCategory
         ? [
             {

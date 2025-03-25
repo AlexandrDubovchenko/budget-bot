@@ -53,10 +53,13 @@ async function getUserNotMakedTransactions(userId: number, from: number, to: num
     LEFT JOIN expense e ON t.id = e.transaction_id
     WHERE t.user_id = ${userId}
     AND e.id IS NULL
-    AND t.time BETWEEN TO_TIMESTAMP(${from}) AND TO_TIMESTAMP(${to}) 
+    AND t.time BETWEEN TO_TIMESTAMP(${from}) AND TO_TIMESTAMP(${to})
     GROUP BY t.id, t.user_id, t.time, t.description`
-    
-  return result.rows
+
+  return result.rows.map(row => ({
+    ...row,
+    time: new Date(row.time)  // Convert string to Date
+  }));
 }
 
 async function getTransactionById(id: number): Promise<Transaction> {
