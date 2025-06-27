@@ -57,11 +57,13 @@ export const Analytic = ({
     const { analytic } = await refetchAnalytic(selectedDateRange);
     setAnalytic(analytic);
   };
-  
+
   return (
-    <div className='flex flex-col gap-4'>
-      <DatePicker value={selectedDateRange} onChange={handleDateChange} />
-      <MonthAnalyticChart data={analytic} />
+    <div className='flex flex-col gap-8'>
+      <div className='flex flex-col gap-4'>
+        <DatePicker value={selectedDateRange} onChange={handleDateChange} />
+        <MonthAnalyticChart data={analytic} />
+      </div>
       <div className='flex flex-col gap-4'>
         {notMarkedTransactions.map((transaction) => (
           <TransactionCard

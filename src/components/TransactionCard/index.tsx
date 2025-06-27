@@ -3,6 +3,7 @@
 import { action } from '@/actions/updateTransactionExpenses';
 import { Expense } from '@/models/Expense';
 import { Transaction } from '@/models/Transaction';
+import { categoriesService } from '@/services/categories-service';
 import classNames from 'classnames';
 import {
   ChangeEvent,
@@ -13,23 +14,6 @@ import {
 } from 'react';
 import z from 'zod';
 
-export const categories = [
-  'Развлечения',
-  'Транспорт',
-  'Продукты',
-  'Доставка еды',
-  'Товары для дома',
-  'Техника',
-  'Подарки',
-  'Внутренний перевод',
-  'Выпивка',
-  'Табак',
-  'Ресторан',
-  'Кофе',
-  'Спорт',
-  'Здоровье',
-  'Другое',
-];
 
 const validateFormData = (data: unknown, maxAmount: number) => {
   const schema = z.object({
@@ -164,6 +148,7 @@ export const TransactionCard = ({
   const [isPending, startTransition] = useTransition();
   const [isCardExpanded, setCardExpanded] = useState(forceExpanded);
   const [expenseState, dispatch] = useReducer(reducer, initialState);
+  const categories = categoriesService.getAllCategories() ?? [];
 
   const mainExpenseAmount = useMemo(() => {
     return Math.max(
