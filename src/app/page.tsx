@@ -7,7 +7,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 async function redirectIfDevMode() {
   if (process.env.NODE_ENV === "development") {
-    const devToken = await signJwt({ id: 36 } as any);
+    const devToken = await signJwt({ id: process.env.DEV_USER_ID });
     if (devToken) {
       return redirect(urlWithParams("/", { token: devToken }));
     }
