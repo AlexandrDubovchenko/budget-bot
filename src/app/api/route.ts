@@ -11,8 +11,9 @@ const appUrl = process.env.APP_URL
 
 // To handle a POST request to /api
 export async function POST(request: NextRequest) {
+  let body;
   try {
-    const body = await request.json();
+    body = await request.json();
     const isExtrernalTransaction = !monobankService.checkIfFromMyFop(body.data.statementItem)
     if (!isExtrernalTransaction) {
       return NextResponse.json({ success: true }, { status: 200 })
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
       console.log(`New transaction for user ${user.id} data: ${JSON.stringify(body)}`)
     }
   } catch (error) {
-    console.log(`ERROR while processing new transaction: ${error}`)
+    console.log(`ERROR while processing new transaction: ${error} \n request: ${JSON.stringify(body)}`)
   } finally {
     return NextResponse.json({ success: true }, { status: 200 });
   }
