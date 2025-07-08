@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
     if (user) {
       const token = await signJwt({ id: user.id })
       const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
-      console.log(`New transaction created for user ${user.id} with id ${result.id}`)
       await bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([Markup.button.webApp("Отметить категории", `${appUrl}/transaction/${result.id}?token=${token}`)])
