@@ -11,8 +11,9 @@ const appUrl = process.env.APP_URL
 
 // To handle a POST request to /api
 export async function POST(request: NextRequest) {
+  let body;
   try {
-    const body = await request.json();
+    body = await request.json();
     const isExtrernalTransaction = !monobankService.checkIfFromMyFop(body.data.statementItem)
     if (!isExtrernalTransaction) {
       return NextResponse.json({ success: true }, { status: 200 })
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
     if (user) {
       const token = await signJwt({ id: user.id })
       const result = await transactionRepository.createTransaction(user.id, body.data.statementItem)
+      console.log(`New transaction created for user ${user.id} with id ${result.id}`)
       await bot.telegram.sendMessage(user.chat_id, createExpenseMessageTemplate(body.data.statementItem), {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([Markup.button.webApp("Отметить категории", `${appUrl}/transaction/${result.id}?token=${token}`)])
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
       console.log(`New transaction for user ${user.id} data: ${JSON.stringify(body)}`)
     }
   } catch (error) {
-    console.log(`ERROR while processing new transaction: ${error}`)
+    console.log(`ERROR while processing new transaction: ${error} \n request: ${JSON.stringify(body)}`)
   } finally {
     return NextResponse.json({ success: true }, { status: 200 });
   }

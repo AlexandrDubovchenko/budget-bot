@@ -2,9 +2,9 @@ import { dbpool } from "@/db-client";
 import { MonobankTransaction, Transaction } from "@/models/Transaction";
 
 async function createTransaction(userId: number, transaction: MonobankTransaction): Promise<Transaction> {
-  const { description, time, amount, comment = null, counterName = null } = transaction
-  const result = await dbpool.sql<Transaction>`INSERT INTO transactions (user_id, time, description, amount, comment, counter_name) 
-               VALUES (${userId}, TO_TIMESTAMP(${time}), ${description}, ${amount}, ${comment}, ${counterName})
+  const { description, time, amount, comment = null, counterName = null, id } = transaction
+  const result = await dbpool.sql<Transaction>`INSERT INTO transactions (user_id, time, description, amount, comment, counter_name, statement_item_id) 
+               VALUES (${userId}, TO_TIMESTAMP(${time}), ${description}, ${amount}, ${comment}, ${counterName}, ${id})
                RETURNING id, time, description, amount, comment, counter_name`;
 
   return result.rows[0];
