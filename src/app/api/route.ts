@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
   let body;
   try {
     body = await request.json();
-    const isExtrernalTransaction = !monobankService.checkIfFromMyFop(body.data.statementItem)
-    if (!isExtrernalTransaction) {
+    const shouldIgnoreTransaction = monobankService.shouldIgnoreTransaction(body.data.statementItem)
+    if (shouldIgnoreTransaction) {
       return NextResponse.json({ success: true }, { status: 200 })
     }
     const user = await userRepository.getUserByAccountId(body.data.account)
