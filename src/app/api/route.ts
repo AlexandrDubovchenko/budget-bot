@@ -33,5 +33,9 @@ export async function POST(request: NextRequest) {
   } finally {
     return NextResponse.json({ success: true }, { status: 200 });
   }
-
 }
+
+export async function GET() {
+  return NextResponse.json({ message: "API is running" }, { status: 200 });
+}
+
